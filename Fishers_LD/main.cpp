@@ -77,7 +77,7 @@ class Matrix
     }
 };
 
-void readInput(string path, vector <pair <Matrix, int> > &trainingData)
+void readInput(string path, vector <pair <Matrix, int> > &Data)
 {
     ifstream f(path, ios::in);
     string line;
@@ -89,7 +89,7 @@ void readInput(string path, vector <pair <Matrix, int> > &trainingData)
         for (int j = 0; j < DIMEN; ++j, ss.ignore())
             ss >> x.first.A[j][0];
         ss >> x.second;
-        trainingData.push_back(x);
+        Data.push_back(x);
     }
 }
 
@@ -135,20 +135,18 @@ double calcEntropy(vector <pair<double, int> > r, int loc)
     return entropy;
 }
 
-int countPoints(vector <pair<double, int> > &r, int loc, bool higher, int classification)
+int countPoints(vector <pair<double, int> > &r, double y0, bool higher, int classification)
 {
-    int counter = 0, start = 0, finish = r.size() - 1;
-    if (higher) start = loc;
-    else finish = loc - 1;
-    for (int i = start; i <= finish; ++i)
-        if (r[i].second == classification)
+    int counter = 0;
+    for (int i = 0; i < r.size(); ++i)
+        if (r[i].second == classification && (r[i].first >= y0 == higher))
             ++counter;
     return counter;
 }
 
 int main()
 {
-    vector <pair <Matrix, int> >trainingData;
+    vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
     //Step 1: Find the center of each cluster
     Matrix mean[2];
@@ -175,7 +173,15 @@ int main()
             loc = i;
     }
     double y0 = (wTx[loc].first + wTx[loc + 1].first) / 2;
-    //Printing
-    cout << countPoints(wTx, loc, false, 0) << " " << countPoints(wTx, loc, false, 1) << endl;
-    cout << countPoints(wTx, loc, true, 0) << " " << countPoints(wTx, loc, true, 1) << endl;
+    //Testing training data
+    cout << countPoints(wTx, y0, false, 0) << " " << countPoints(wTx, y0, false, 1) << endl;
+    cout << countPoints(wTx, y0, true, 0) << " " << countPoints(wTx, y0, true, 1) << endl;
+    //Testing test data
+    readInput("../test.txt", testingData);
+    vector <pair<double, int> > r;
+    for (int i = 0; i < testingData.size(); ++i)
+        r.push_back(pair <double, int> (w.transpose().multiply(testingData[i].first).A[0][0], testingData[i].second));
+    cout << countPoints(r, y0, false, 0) << " " << countPoints(r, y0, false, 1) << endl;
+    cout << countPoints(r, y0, true, 0) << " " << countPoints(r, y0, true, 1) << endl;
+
 }
