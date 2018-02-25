@@ -83,11 +83,11 @@ void readInput(string path, vector <pair <Matrix, int> > &trainingData)
     string line;
     pair <Matrix, int> x;
     x.first = *new Matrix(DIMEN, 1);
-    for (int i = 0; getline(f, line); ++i)
+    while(getline(f, line))
     {
         stringstream ss(line);
         for (int j = 0; j < DIMEN; ++j, ss.ignore())
-            ss >> x.first.A[i][j];
+            ss >> x.first.A[j][0];
         ss >> x.second;
         trainingData.push_back(x);
     }
@@ -149,9 +149,7 @@ int countPoints(vector <pair<double, int> > &r, int loc, bool higher, int classi
 int main()
 {
     vector <pair <Matrix, int> >trainingData;
-    readInput("../test.txt", trainingData);
-    for (int i = 0; i < trainingData.size(); ++i)
-        cout << trainingData[i].second << " ";
+    readInput("../train.txt", trainingData);
     //Step 1: Find the center of each cluster
     Matrix mean[2];
     mean[0] = findMean(trainingData, 0);
