@@ -184,4 +184,7 @@ int main()
     cout << countPoints(r, y0, false, 0) << " " << countPoints(r, y0, false, 1) << endl;
     cout << countPoints(r, y0, true, 0) << " " << countPoints(r, y0, true, 1) << endl;
 
+    cout << endl << endl;
+    cout << w.A[0][0] << " " << w.A[1][0] << " " << w.A[2][0] << " " << w.A[3][0] << endl;
+
 }

@@ -33,6 +33,22 @@ class Matrix
                     prod.A[i][j] += A[i][k] * m.A[k][j];
         return prod;
     }
+    Matrix multiply(double x)
+    {
+        Matrix B(A.size(), A[0].size());
+        for (int i = 0; i < A.size(); ++i)
+            for (int j = 0; j < A[0].size(); ++j)
+                B[i][j] = A[i][j] * x;
+        return B;
+    }
+    double sum()
+    {
+        double sum = 0;
+        for (int i = 0; i < A.size(); ++i)
+            for (int j = 0; j < A[0].size(); ++j)
+                sum += A[i][j];
+        return sum;
+    }
     double det()
     {
         if (A.size() != A[0].size()) return 0;
@@ -93,37 +109,11 @@ void readInput(string path, vector <pair <Matrix, int> > &Data)
     }
 }
 
-Matrix findMean(vector <pair <Matrix, int> > &trainingData, int classification)
-{
-    Matrix m(DIMEN, 1);
-    int n = 0;
-    for (int i = 0; i < trainingData.size(); ++i)
-        if (trainingData[i].second == classification)
-            m = m.add(trainingData[i].first, !(++n));
-    for (int i = 0; i < DIMEN; ++i)
-        m.A[i][0] /= n;
-    return m;
-}
-
-Matrix intraCov(vector <pair <Matrix, int> > &trainingData, Matrix mean[])
-{
-    vector <Matrix> Sw;
-    Matrix S(DIMEN, DIMEN);
-    Sw.push_back(S);
-    Sw.push_back(S);
-    for (int i = 0; i < trainingData.size(); ++i)
-    {
-        Matrix m = trainingData[i].first.add(mean[trainingData[i].second], true);
-        Sw[trainingData[i].second] = Sw[trainingData[i].second].add(m.multiply(m.transpose()));
-    }
-    return Sw[0].add(Sw[1]);
-}
-
-int countPoints(vector <pair<double, int> > &r, bool condition, double y0, bool higher, int classification)
+int countPoints(vector <pair<double, int> > &r, double y0, bool higher, int classification)
 {
     int counter = 0;
     for (int i = 0; i < r.size(); ++i)
-        if (r[i].second == classification && (!condition ||(r[i].first >= y0 == higher)))
+        if (r[i].second == classification && (r[i].first >= y0 == higher))
             ++counter;
     return counter;
 }
@@ -132,32 +122,47 @@ int main()
 {
     vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
-    //Step 1: Find the center of each cluster
-    Matrix mean[2];
-    mean[0] = findMean(trainingData, 0);
-    mean[1] = findMean(trainingData, 1);
-    //Step 2: Find the covariance with each cluster
-    Matrix Sw(DIMEN, DIMEN);
-    Sw = intraCov(trainingData, mean);
-    //Step 3: Find w, the weight vector
-    Matrix w = Sw.inverse().multiply(mean[1].add(mean[0], true));
+    //Step 1: Initialize w
+    Matrix w(DIMEN, 1);
+    //Step 2: Gradient descent
+    double eta = 0.01, error = 1;
+    while (error > 0.001)
+    {
+        Matrix delE(DIMEN, 1);
+        for (int i = 0; i < trainingData.size(); ++i)
+        {
+            double yn = sigmoid(w.transpose().multiply(trainingData[i].first).A[0][0]);
+            delE = delE.add(trainingData[i].first.multiply(yn - trainingData[i].second));
+        }
+        error = delE.sum();
+        w = w.add(delE.multiply(eta), true);
+    }
+
+
     //Step 4: project all the points to single dimension
     vector <pair<double, int> > wTx;
     for (int i = 0; i < trainingData.size(); ++i)
-        wTx.push_back(pair <double, int> (w.transpose().multiply(trainingData[i].first).A[0][0], trainingData[i].second));
+        wTx.push_back(pair <double, int> (sigmoid(w.transpose().multiply(trainingData[i].first).A[0][0]), trainingData[i].second));
     //Step 5: calc y0
-    double y0 = -0.5 * mean[0].transpose().multiply(Sw.inverse()).multiply(mean[0]).A[0][0];
-    y0 += -0.5 * mean[1].transpose().multiply(Sw.inverse()).multiply(mean[1]).A[0][0];
-    y0 += log(countPoints(wTx, false, 0, false, 0) / countPoints(wTx, false, 0, false, 1));
+    double minEntropy = 10e7;
+    int loc = 0;
+    for (int i = 1; i < trainingData.size(); ++i)
+    {
+        double E = calcEntropy(wTx, i);
+        minEntropy = min(minEntropy, E);
+        if (minEntropy == E)
+            loc = i;
+    }
+    double y0 = (wTx[loc].first + wTx[loc + 1].first) / 2;
     //Testing training data
-    cout << countPoints(wTx, true, y0, false, 0) << " " << countPoints(wTx, true, y0, false, 1) << endl;
-    cout << countPoints(wTx, true, y0, true, 0) << " " << countPoints(wTx, true, y0, true, 1) << endl;
+    cout << countPoints(wTx, y0, false, 0) << " " << countPoints(wTx, y0, false, 1) << endl;
+    cout << countPoints(wTx, y0, true, 0) << " " << countPoints(wTx, y0, true, 1) << endl;
     //Testing test data
     readInput("../test.txt", testingData);
     vector <pair<double, int> > r;
     for (int i = 0; i < testingData.size(); ++i)
         r.push_back(pair <double, int> (w.transpose().multiply(testingData[i].first).A[0][0], testingData[i].second));
-    cout << countPoints(r, true, y0, false, 0) << " " << countPoints(r, true, y0, false, 1) << endl;
-    cout << countPoints(r, true, y0, true, 0) << " " << countPoints(r, true, y0, true, 1) << endl;
+    cout << countPoints(r, y0, false, 0) << " " << countPoints(r, y0, false, 1) << endl;
+    cout << countPoints(r, y0, true, 0) << " " << countPoints(r, y0, true, 1) << endl;
 
 }
