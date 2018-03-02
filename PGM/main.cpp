@@ -64,7 +64,7 @@ class Matrix
         if (!determinant) return adj;
         for (int i = 0; i < A.size(); ++i)
             for (int j = 0; j < A.size(); ++j)
-                adj.A[j][i] = ((i + j % 2)? -1: 1) * cofactor(i, j) / determinant;
+                adj.A[j][i] = (((i + j) % 2)? -1: 1) * cofactor(i, j) / determinant;
         return adj;
     }
     Matrix transpose()
@@ -138,7 +138,11 @@ int main()
     mean[1] = findMean(trainingData, 1);
     //Step 2: Find the covariance with each cluster
     Matrix Sw(DIMEN, DIMEN);
-    Sw = intraCov(trainingData, mean);
+    Sw = intraCov(trainingData, mean).inverse();
+    for (int i = 0; i < Sw.A.size(); ++i, cout << endl)
+        for (int j = 0; j < Sw.A[0].size(); ++j)
+            cout << Sw.A[i][j] << " ";
+    return 0;
     //Step 3: Find w, the weight vector
     Matrix w = Sw.inverse().multiply(mean[1].add(mean[0], true));
     //Step 4: project all the points to single dimension

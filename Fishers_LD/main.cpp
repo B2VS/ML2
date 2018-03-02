@@ -37,6 +37,9 @@ class Matrix
     {
         if (A.size() != A[0].size()) return 0;
         if (A.size() == 1) return A[0][0];
+        /*for (int i = 0; i < A.size(); ++i, cout << endl)
+            for (int j = 0; j < A.size(); ++j)
+                cout << A[i][j] << " ";*/
         double determinant = 0;
         for (int i = 0; i < A.size(); ++i)
         {
@@ -46,6 +49,10 @@ class Matrix
                     m.A[j][k] = A[j + 1][k >= i? k + 1: k];
             determinant += (i % 2? -1: 1) * A[0][i] * m.det();
         }
+        /*for (int i = 0; i < A.size(); ++i, cout << endl)
+            for (int j = 0; j < A.size(); ++j)
+                cout << A[i][j] << " ";
+        //cout << determinant << endl;*/
         return determinant;
     }
     double cofactor(int r, int c)
@@ -60,11 +67,12 @@ class Matrix
     Matrix inverse()
     {
         Matrix adj(A.size(), A.size());
+        cout << det() << endl;
         double determinant = det();
         if (!determinant) return adj;
         for (int i = 0; i < A.size(); ++i)
             for (int j = 0; j < A.size(); ++j)
-                adj.A[j][i] = ((i + j % 2)? -1: 1) * cofactor(i, j) / determinant;
+                adj.A[j][i] = (((i + j) % 2)? -1: 1) * cofactor(i, j) / determinant;
         return adj;
     }
     Matrix transpose()
@@ -146,6 +154,19 @@ int countPoints(vector <pair<double, int> > &r, double y0, bool higher, int clas
 
 int main()
 {
+    /*Matrix hu(5, 5);
+    hu.A[0][0] = 2; hu.A[0][1] = 1; hu.A[0][2] = 3; hu.A[0][3] = 4; hu.A[0][4] = 1;
+    hu.A[1][0] = 5; hu.A[1][1] = 3; hu.A[1][2] = 2; hu.A[1][3] = 6; hu.A[1][4] = 3;
+    hu.A[2][0] = 4.1; hu.A[2][1] = 2; hu.A[2][2] = 7; hu.A[2][3] = 4; hu.A[2][4] = 3;
+    hu.A[3][0] = 7.9; hu.A[3][1] = 4; hu.A[3][2] = 6; hu.A[3][3] = 7; hu.A[3][4] = 8;
+    hu.A[4][0] = 7; hu.A[4][1] = 6; hu.A[4][2] = 5.54; hu.A[4][3] = 3; hu.A[4][4] = 2;
+    hu = hu.inverse();
+    cout << "********************************" << endl;
+    for (int i = 0; i < 5; ++i, cout << endl)
+        for (int j = 0; j < 5; ++j)
+            cout << hu.A[i][j] << " ";
+    return 0;
+    */
     vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
     //Step 1: Find the center of each cluster
