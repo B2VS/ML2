@@ -133,35 +133,44 @@ int main()
     vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
     //Step 1: Find the center of each cluster
+    cout << "Finding the center of each cluster..." << endl;
     Matrix mean[2];
     mean[0] = findMean(trainingData, 0);
     mean[1] = findMean(trainingData, 1);
     //Step 2: Find the covariance with each cluster
+    cout << "Calculating covariance matrix..." << endl;
     Matrix Sw(DIMEN, DIMEN);
-    Sw = intraCov(trainingData, mean).inverse();
-    for (int i = 0; i < Sw.A.size(); ++i, cout << endl)
-        for (int j = 0; j < Sw.A[0].size(); ++j)
-            cout << Sw.A[i][j] << " ";
-    return 0;
+    Sw = intraCov(trainingData, mean);
     //Step 3: Find w, the weight vector
+    cout << "Calculating weight vector..." << endl;
     Matrix w = Sw.inverse().multiply(mean[1].add(mean[0], true));
     //Step 4: project all the points to single dimension
+    cout << "Projecting all points in 1D..." << endl;
     vector <pair<double, int> > wTx;
     for (int i = 0; i < trainingData.size(); ++i)
         wTx.push_back(pair <double, int> (w.transpose().multiply(trainingData[i].first).A[0][0], trainingData[i].second));
     //Step 5: calc y0
+    cout << "Calculating y0..." << endl;
     double y0 = -0.5 * mean[0].transpose().multiply(Sw.inverse()).multiply(mean[0]).A[0][0];
     y0 += -0.5 * mean[1].transpose().multiply(Sw.inverse()).multiply(mean[1]).A[0][0];
     y0 += log(countPoints(wTx, false, 0, false, 0) / countPoints(wTx, false, 0, false, 1));
     //Testing training data
-    cout << countPoints(wTx, true, y0, false, 0) << " " << countPoints(wTx, true, y0, false, 1) << endl;
-    cout << countPoints(wTx, true, y0, true, 0) << " " << countPoints(wTx, true, y0, true, 1) << endl;
+    cout << "Training Data: " << endl;
+    cout << "   " << countPoints(wTx, true, y0, true, 1) << " " << countPoints(wTx, true, y0, true, 0) << endl;
+    cout << "   " << countPoints(wTx, true, y0, false, 1) << " " << countPoints(wTx, true, y0, false, 0) << endl;
     //Testing test data
     readInput("../test.txt", testingData);
     vector <pair<double, int> > r;
     for (int i = 0; i < testingData.size(); ++i)
         r.push_back(pair <double, int> (w.transpose().multiply(testingData[i].first).A[0][0], testingData[i].second));
-    cout << countPoints(r, true, y0, false, 0) << " " << countPoints(r, true, y0, false, 1) << endl;
-    cout << countPoints(r, true, y0, true, 0) << " " << countPoints(r, true, y0, true, 1) << endl;
-
+    cout << "Testing Data: " << endl;
+    double tp = countPoints(r, true, y0, true, 1);
+    double tn = countPoints(r, true, y0, false, 0);
+    double fp = countPoints(r, true, y0, true, 0);
+    double fn = countPoints(r, true, y0, false, 1);
+    cout << "   " << tp << " " << fp << endl;
+    cout << "   " << fn << " " << tn << endl;
+    cout << "Accuracy: " << (tp + tn) / (tp + tn + fp + fn) << endl;
+    cout << "Precision: " << tp / (tp + fp) << endl;
+    cout << "Recall: " << tp / (tp + fn) << endl;
 }

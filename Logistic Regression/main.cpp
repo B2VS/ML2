@@ -49,40 +49,6 @@ class Matrix
                 sum += A[i][j];
         return sum;
     }
-    double det()
-    {
-        if (A.size() != A[0].size()) return 0;
-        if (A.size() == 1) return A[0][0];
-        double determinant = 0;
-        for (int i = 0; i < A.size(); ++i)
-        {
-            Matrix m(A.size() - 1, A.size() - 1);
-            for (int j = 0; j < A.size() - 1; ++j)
-                for (int k = 0; k < A.size() - 1; ++k)
-                    m.A[j][k] = A[j + 1][k >= i? k + 1: k];
-            determinant += (i % 2? -1: 1) * A[0][i] * m.det();
-        }
-        return determinant;
-    }
-    double cofactor(int r, int c)
-    {
-        if (A.size() != A[0].size()) return 0;
-        Matrix m(A.size() - 1, A.size() - 1);
-        for (int j = 0; j < A.size() - 1; ++j)
-            for (int k = 0; k < A.size() - 1; ++k)
-                m.A[j][k] = A[j >= r? j + 1: j][k >= c? k + 1: k];
-        return m.det();
-    }
-    Matrix inverse()
-    {
-        Matrix adj(A.size(), A.size());
-        double determinant = det();
-        if (!determinant) return adj;
-        for (int i = 0; i < A.size(); ++i)
-            for (int j = 0; j < A.size(); ++j)
-                adj.A[j][i] = ((i + j % 2)? -1: 1) * cofactor(i, j) / determinant;
-        return adj;
-    }
     Matrix transpose()
     {
         Matrix t(A[0].size(), A.size());
@@ -129,8 +95,10 @@ int main()
     vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
     //Step 1: Initialize w
+    cout << "Initializing w with zeros..." << endl;
     Matrix w(DIMEN + 1, 1);
     //Step 2: Gradient descent
+    cout << "Finding w with error less than 0.01 using gradient descent..." << endl;
     double eta = 0.001, error = 1;
     while (error > 0.01)
     {
@@ -143,23 +111,28 @@ int main()
         error = abs(delE.sum());
         w = w.add(delE.multiply(eta), true);
     }
-
-    for (int i = 0; i < w.A.size(); ++i)
-        cout << w.A[i][0] << " ";
-    cout << endl;
-    //Step 4: project all the points to single dimension
+    //Step 3: project all the points to single dimension
+    cout << "Projecting all points to 1D..." << endl;
     vector <pair<double, int> > y;
     for (int i = 0; i < trainingData.size(); ++i)
         y.push_back(pair <double, int> (w.transpose().multiply(trainingData[i].first).A[0][0], trainingData[i].second));
     //Testing training data
-    cout << countPoints(y, 0, false, 0) << " " << countPoints(y, 0, false, 1) << endl;
-    cout << countPoints(y, 0, true, 0) << " " << countPoints(y, 0, true, 1) << endl;
+    cout << "Training Data: " << endl;
+    cout << "   " << countPoints(y, 0, true, 1) << " " << countPoints(y, 0, true, 0) << endl;
+    cout << "   " << countPoints(y, 0, false, 1) << " " << countPoints(y, 0, false, 0) << endl;
     //Testing test data
     readInput("../test.txt", testingData);
     vector <pair<double, int> > r;
     for (int i = 0; i < testingData.size(); ++i)
         r.push_back(pair <double, int> (w.transpose().multiply(testingData[i].first).A[0][0], testingData[i].second));
-    cout << countPoints(r, 0, false, 0) << " " << countPoints(r, 0, false, 1) << endl;
-    cout << countPoints(r, 0, true, 0) << " " << countPoints(r, 0, true, 1) << endl;
-
+    cout << "Testing Data: " << endl;
+    double tp = countPoints(r, 0, true, 1);
+    double tn = countPoints(r, 0, false, 0);
+    double fp = countPoints(r, 0, true, 0);
+    double fn = countPoints(r, 0, false, 1);
+    cout << "   " << tp << " " << fp << endl;
+    cout << "   " << fn << " " << tn << endl;
+    cout << "Accuracy: " << (tp + tn) / (tp + tn + fp + fn) << endl;
+    cout << "Precision: " << tp / (tp + fp) << endl;
+    cout << "Recall: " << tp / (tp + fn) << endl;
 }

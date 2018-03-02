@@ -37,9 +37,6 @@ class Matrix
     {
         if (A.size() != A[0].size()) return 0;
         if (A.size() == 1) return A[0][0];
-        /*for (int i = 0; i < A.size(); ++i, cout << endl)
-            for (int j = 0; j < A.size(); ++j)
-                cout << A[i][j] << " ";*/
         double determinant = 0;
         for (int i = 0; i < A.size(); ++i)
         {
@@ -49,10 +46,6 @@ class Matrix
                     m.A[j][k] = A[j + 1][k >= i? k + 1: k];
             determinant += (i % 2? -1: 1) * A[0][i] * m.det();
         }
-        /*for (int i = 0; i < A.size(); ++i, cout << endl)
-            for (int j = 0; j < A.size(); ++j)
-                cout << A[i][j] << " ";
-        //cout << determinant << endl;*/
         return determinant;
     }
     double cofactor(int r, int c)
@@ -67,7 +60,6 @@ class Matrix
     Matrix inverse()
     {
         Matrix adj(A.size(), A.size());
-        cout << det() << endl;
         double determinant = det();
         if (!determinant) return adj;
         for (int i = 0; i < A.size(); ++i)
@@ -154,36 +146,29 @@ int countPoints(vector <pair<double, int> > &r, double y0, bool higher, int clas
 
 int main()
 {
-    /*Matrix hu(5, 5);
-    hu.A[0][0] = 2; hu.A[0][1] = 1; hu.A[0][2] = 3; hu.A[0][3] = 4; hu.A[0][4] = 1;
-    hu.A[1][0] = 5; hu.A[1][1] = 3; hu.A[1][2] = 2; hu.A[1][3] = 6; hu.A[1][4] = 3;
-    hu.A[2][0] = 4.1; hu.A[2][1] = 2; hu.A[2][2] = 7; hu.A[2][3] = 4; hu.A[2][4] = 3;
-    hu.A[3][0] = 7.9; hu.A[3][1] = 4; hu.A[3][2] = 6; hu.A[3][3] = 7; hu.A[3][4] = 8;
-    hu.A[4][0] = 7; hu.A[4][1] = 6; hu.A[4][2] = 5.54; hu.A[4][3] = 3; hu.A[4][4] = 2;
-    hu = hu.inverse();
-    cout << "********************************" << endl;
-    for (int i = 0; i < 5; ++i, cout << endl)
-        for (int j = 0; j < 5; ++j)
-            cout << hu.A[i][j] << " ";
-    return 0;
-    */
     vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
     //Step 1: Find the center of each cluster
+    cout << "Finding the center of each cluster..." << endl;
     Matrix mean[2];
     mean[0] = findMean(trainingData, 0);
     mean[1] = findMean(trainingData, 1);
     //Step 2: Find the covariance with each cluster
+    cout << "Calculating covariance matrix..." << endl;
     Matrix Sw(DIMEN, DIMEN);
     Sw = intraCov(trainingData, mean);
     //Step 3: Find w, the weight vector
+    cout << "Calculating weight vector..." << endl;
     Matrix w = Sw.inverse().multiply(mean[1].add(mean[0], true));
     //Step 4: project all the points to single dimension and sort them
+    cout << "Projecting all points in 1D..." << endl;
     vector <pair<double, int> > wTx;
     for (int i = 0; i < trainingData.size(); ++i)
         wTx.push_back(pair <double, int> (w.transpose().multiply(trainingData[i].first).A[0][0], trainingData[i].second));
+    cout << "Sorting..." << endl;
     sort(wTx.begin(), wTx.end());
     //Step 5: calc y0
+    cout << "Finding y0. The division with least entropy..." << endl;
     double minEntropy = 10e7;
     int loc = 0;
     for (int i = 1; i < trainingData.size(); ++i)
@@ -195,17 +180,23 @@ int main()
     }
     double y0 = (wTx[loc].first + wTx[loc + 1].first) / 2;
     //Testing training data
-    cout << countPoints(wTx, y0, false, 0) << " " << countPoints(wTx, y0, false, 1) << endl;
-    cout << countPoints(wTx, y0, true, 0) << " " << countPoints(wTx, y0, true, 1) << endl;
+    cout << "Training Data: " << endl;
+    cout << "   " << countPoints(wTx, y0, true, 1) << " " << countPoints(wTx, y0, true, 0) << endl;
+    cout << "   " << countPoints(wTx, y0, false, 1) << " " << countPoints(wTx, y0, false, 0) << endl;
     //Testing test data
     readInput("../test.txt", testingData);
     vector <pair<double, int> > r;
     for (int i = 0; i < testingData.size(); ++i)
         r.push_back(pair <double, int> (w.transpose().multiply(testingData[i].first).A[0][0], testingData[i].second));
-    cout << countPoints(r, y0, false, 0) << " " << countPoints(r, y0, false, 1) << endl;
-    cout << countPoints(r, y0, true, 0) << " " << countPoints(r, y0, true, 1) << endl;
-
-    cout << endl << endl;
-    cout << w.A[0][0] << " " << w.A[1][0] << " " << w.A[2][0] << " " << w.A[3][0] << endl;
+    cout << "Testing Data: " << endl;
+    double tp = countPoints(r, y0, true, 1);
+    double tn = countPoints(r, y0, false, 0);
+    double fp = countPoints(r, y0, true, 0);
+    double fn = countPoints(r, y0, false, 1);
+    cout << "   " << tp << " " << fp << endl;
+    cout << "   " << fn << " " << tn << endl;
+    cout << "Accuracy: " << (tp + tn) / (tp + tn + fp + fn) << endl;
+    cout << "Precision: " << tp / (tp + fp) << endl;
+    cout << "Recall: " << tp / (tp + fn) << endl;
 
 }
