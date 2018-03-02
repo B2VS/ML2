@@ -38,7 +38,7 @@ class Matrix
         Matrix B(A.size(), A[0].size());
         for (int i = 0; i < A.size(); ++i)
             for (int j = 0; j < A[0].size(); ++j)
-                B[i][j] = A[i][j] * x;
+                B.A[i][j] = A[i][j] * x;
         return B;
     }
     double sum()
@@ -98,11 +98,12 @@ void readInput(string path, vector <pair <Matrix, int> > &Data)
     ifstream f(path, ios::in);
     string line;
     pair <Matrix, int> x;
-    x.first = *new Matrix(DIMEN, 1);
+    x.first = *new Matrix(DIMEN + 1, 1);
+    x.first.A[0][0] = 1;
     while(getline(f, line))
     {
         stringstream ss(line);
-        for (int j = 0; j < DIMEN; ++j, ss.ignore())
+        for (int j = 1; j <= DIMEN; ++j, ss.ignore())
             ss >> x.first.A[j][0];
         ss >> x.second;
         Data.push_back(x);
@@ -118,51 +119,47 @@ int countPoints(vector <pair<double, int> > &r, double y0, bool higher, int clas
     return counter;
 }
 
+double sigmoid(double x)
+{
+    return 1 / (1 + exp(0 - x));
+}
+
 int main()
 {
     vector <pair <Matrix, int> >trainingData, testingData;
     readInput("../train.txt", trainingData);
     //Step 1: Initialize w
-    Matrix w(DIMEN, 1);
+    Matrix w(DIMEN + 1, 1);
     //Step 2: Gradient descent
-    double eta = 0.01, error = 1;
-    while (error > 0.001)
+    double eta = 0.001, error = 1;
+    while (error > 0.01)
     {
-        Matrix delE(DIMEN, 1);
+        Matrix delE(DIMEN + 1, 1);
         for (int i = 0; i < trainingData.size(); ++i)
         {
             double yn = sigmoid(w.transpose().multiply(trainingData[i].first).A[0][0]);
             delE = delE.add(trainingData[i].first.multiply(yn - trainingData[i].second));
         }
-        error = delE.sum();
+        error = abs(delE.sum());
         w = w.add(delE.multiply(eta), true);
     }
 
-
+    for (int i = 0; i < w.A.size(); ++i)
+        cout << w.A[i][0] << " ";
+    cout << endl;
     //Step 4: project all the points to single dimension
-    vector <pair<double, int> > wTx;
+    vector <pair<double, int> > y;
     for (int i = 0; i < trainingData.size(); ++i)
-        wTx.push_back(pair <double, int> (sigmoid(w.transpose().multiply(trainingData[i].first).A[0][0]), trainingData[i].second));
-    //Step 5: calc y0
-    double minEntropy = 10e7;
-    int loc = 0;
-    for (int i = 1; i < trainingData.size(); ++i)
-    {
-        double E = calcEntropy(wTx, i);
-        minEntropy = min(minEntropy, E);
-        if (minEntropy == E)
-            loc = i;
-    }
-    double y0 = (wTx[loc].first + wTx[loc + 1].first) / 2;
+        y.push_back(pair <double, int> (w.transpose().multiply(trainingData[i].first).A[0][0], trainingData[i].second));
     //Testing training data
-    cout << countPoints(wTx, y0, false, 0) << " " << countPoints(wTx, y0, false, 1) << endl;
-    cout << countPoints(wTx, y0, true, 0) << " " << countPoints(wTx, y0, true, 1) << endl;
+    cout << countPoints(y, 0, false, 0) << " " << countPoints(y, 0, false, 1) << endl;
+    cout << countPoints(y, 0, true, 0) << " " << countPoints(y, 0, true, 1) << endl;
     //Testing test data
     readInput("../test.txt", testingData);
     vector <pair<double, int> > r;
     for (int i = 0; i < testingData.size(); ++i)
         r.push_back(pair <double, int> (w.transpose().multiply(testingData[i].first).A[0][0], testingData[i].second));
-    cout << countPoints(r, y0, false, 0) << " " << countPoints(r, y0, false, 1) << endl;
-    cout << countPoints(r, y0, true, 0) << " " << countPoints(r, y0, true, 1) << endl;
+    cout << countPoints(r, 0, false, 0) << " " << countPoints(r, 0, false, 1) << endl;
+    cout << countPoints(r, 0, true, 0) << " " << countPoints(r, 0, true, 1) << endl;
 
 }
