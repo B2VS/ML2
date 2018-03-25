@@ -8,23 +8,20 @@ class NN
     vector <int> sizes;
     vector <vector <vector <double> > > weights, delw;
     vector <vector <double> > z, delta;
-    vector <double> target;
-    NN(int layers, vector <int> &sizes, vector <double> &input, vector <double> &t)
+    NN(int layers, vector <int> &sizes)
     {
         this->layers = layers;
-        z.push_back(input);
         for (int i = 0; i < layers; ++i)
         {
             this->sizes[i] = sizes[i];
             delta.push_back(vector <double> (sizes[i]));
+            z.push_back(vector <double> (sizes[i]));
         }
         for (int i = 0; i < layers - 1; ++i)
         {
             weights.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
             delw.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
-            z.push_back(vector <double> (sizes[i]));
         }
-        target = t;
     }
     void forwardPass()
     {
@@ -43,7 +40,7 @@ class NN
     {
         forwardPass();
         for (int i = 0; i < sizes[layers - 1]; ++i)
-            delta[layers - 1][i] = z[layers - 1][i] - target[i];
+            delta[layers - 1][i] = z[layers - 1][i] - t[i];
         for (int i = layers - 2; i >= 0; --i)
         {
             for (int j = 0; j < sizes[i]; ++j)
