@@ -3,18 +3,19 @@
 #define ETA 0.01
 
 using namespace std;
-typedef vector <pair <vector <double>, int> > Data
+typedef vector <pair <vector <double>, vector <double> > > Data;
 
 class NN
 {
+    public:
     int layers;
     vector <int> sizes;
     vector <vector <vector <double> > > weights, delw, v;
     vector <vector <double> > z, delta;
 
-    NN(int layers, vector <int> &sizes)
+    NN(vector <int> &sizes)
     {
-        this->layers = layers;
+        layers = sizes.size();
         for (int i = 0; i < layers; ++i)
         {
             this->sizes[i] = sizes[i];
@@ -25,22 +26,54 @@ class NN
         {
             weights.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
             delw.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
-            v.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])))
+            v.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
         }
+    }
+
+    int test(Data &testData)
+    {
+        int error = 0;
+        for (int i = 0; i < testData.size(); ++i)
+        {
+            for (int j = 0; j < sizes[0]; ++j)
+                z[0][j] = testData[i].first[j];
+            forwardPass();
+            if (distance(testData[i].second.begin(), max_element(testData[i].second.begin(), testData[i].second.end())) !=
+                distance(z[layers - 1].begin(), max_element(z[layers - 1].begin(), z[layers - 1].end())))
+                error += 1;
+        }
+        return error;
     }
 
     void train(Data &trainingData, Data &validationData, int batchSize, int maxIt)
     {
-        for (int batch = 0; batch < trainingData.size(); batch += batchSize)
+        int prev = validationData.size();
+        for (int ep = 0; ep < maxIt; ++ep)
         {
-            for (int i = 0; i < batchSize; ++i)
+            for (int batch = 0; batch < trainingData.size(); batch += batchSize)
             {
-                for (int j = 0; j < sizes[0]; ++j)
-                    z[0][j] = trainingData[batch + i].first[j];
-                backProp();
+                for (int i = 0; i < layers - 1; ++i)
+                    for (int j = 0; j < sizes[i]; ++j)
+                        for (int k = 0; k < sizes[i + 1]; ++k)
+                            delw[i][j][k] = 0;
+                for (int i = 0; i < batchSize; ++i)
+                {
+                    for (int j = 0; j < sizes[0]; ++j)
+                        z[0][j] = trainingData[batch + i].first[j];
+                    backProp(trainingData[i].second);
+                }
+                for (int i = 0; i < layers - 1; ++i)
+                    for (int j = 0; j < sizes[i]; ++j)
+                        for (int k = 0; k < sizes[i + 1]; ++k)
+                            delw[i][j][k] /= batchSize;
+                gradDescent();
             }
-            gradDescent();
+            if (test(validationData) > prev)
+                break;
+            else
+                prev = test(validationData);
         }
+
     }
 
     void forwardPass()
@@ -72,7 +105,12 @@ class NN
         }
     }
 
-    void backProp()
+    double sigmoid(double x)
+    {
+        return 1 / (1 + exp(-x));
+    }
+
+    void backProp(vector <double> &t)
     {
         forwardPass();
         for (int i = 0; i < sizes[layers - 1]; ++i)
@@ -94,15 +132,33 @@ class NN
     }
 };
 
+void readInput(string path, Data &data, int dimenX, int dimenY)
+{
+    ifstream f(path, ios::in);
+    string line;
+    while(getline(f, line))
+    {
+        vector <double> x(dimenX), y(dimenY);
+        int y_pos;
+        stringstream ss(line);
+        for (int j = 0; j < dimenX; ++j, ss.ignore())
+            ss >> x[j];
+        ss >> y_pos;
+        y[y_pos] = 1;
+        data.push_back(pair <vector <double> , vector <double> > (x, y));
+    }
+}
+
 int main()
 {
-    Matrix m1(2, 2), m2(2, 2);
-    m1.A[0][0] = 0; m1.A[0][1] = 1;
-    m1.A[1][0] = 2; m1.A[1][1] = 3;
-    m2.A[0][0] = 1; m2.A[0][1] = 2;
-    m2.A[1][0] = 1; m2.A[1][1] = 2;
-    m1.binaryOp(m2, plus<double>());
-    cout << m1.A[0][0] << " " << m1.A[0][1] << endl;
-    cout << m1.A[1][0] << " " << m1.A[1][1] << endl;
+    Data trainingData, validationData, testData;
+    readInput("../train.txt", trainingData, 64, 10);
+    readInput("../test.txt", testData, 64, 10);
+    readInput("../validation.txt", validationData, 64, 10);
+    vector <int> sizes;
+    sizes.push_back(64); sizes.push_back(5); sizes.push_back(10);
+    NN network(sizes);
+    network.train(trainingData, validationData, 100, 3000);
+    cout << network.test(testData);
     return 0;
 }
