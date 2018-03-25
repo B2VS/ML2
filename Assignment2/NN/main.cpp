@@ -1,13 +1,17 @@
 #include <bits/stdc++.h>
+#define GAMMA 0.9
+#define ETA 0.01
 
 using namespace std;
+typedef vector <pair <vector <double>, int> > Data
 
 class NN
 {
     int layers;
     vector <int> sizes;
-    vector <vector <vector <double> > > weights, delw;
+    vector <vector <vector <double> > > weights, delw, v;
     vector <vector <double> > z, delta;
+
     NN(int layers, vector <int> &sizes)
     {
         this->layers = layers;
@@ -21,8 +25,24 @@ class NN
         {
             weights.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
             delw.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])));
+            v.push_back(vector <vector <double> > (sizes[i], vector <double> (sizes[i + 1])))
         }
     }
+
+    void train(Data &trainingData, Data &validationData, int batchSize, int maxIt)
+    {
+        for (int batch = 0; batch < trainingData.size(); batch += batchSize)
+        {
+            for (int i = 0; i < batchSize; ++i)
+            {
+                for (int j = 0; j < sizes[0]; ++j)
+                    z[0][j] = trainingData[batch + i].first[j];
+                backProp();
+            }
+            gradDescent();
+        }
+    }
+
     void forwardPass()
     {
         for (int i = 1; i < layers; ++i)
@@ -36,6 +56,22 @@ class NN
             }
         }
     }
+
+    void gradDescent()
+    {
+        for (int i = 0; i < layers - 1; ++i)
+        {
+            for (int j = 0; j < sizes[i]; ++j)
+            {
+                for (int k = 0; k < sizes[i + 1]; ++k)
+                {
+                    v[i][j][k] = GAMMA * v[i][j][k] + ETA * delw[i][j][k];
+                    weights[i][j][k] -= v[i][j][k];
+                }
+            }
+        }
+    }
+
     void backProp()
     {
         forwardPass();
@@ -54,7 +90,7 @@ class NN
         for (int i = 0; i < layers - 1; ++i)
             for (int j = 0; j < sizes[i]; ++j)
                 for (int k = 0; k < sizes[i + 1]; ++k)
-                    delw[i][j][k] = delta[i + 1][k] * z[i][j];
+                    delw[i][j][k] += delta[i + 1][k] * z[i][j];
     }
 };
 
