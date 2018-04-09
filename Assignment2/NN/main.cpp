@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 #define GAMMA 0.9
-#define ETA 0.005
+#define ETA 0.01
 
 using namespace std;
 typedef vector <pair <vector <double>, vector <double> > > Data;
@@ -59,7 +59,7 @@ class NN
                 distance(z[layers - 1].begin(), max_element(z[layers - 1].begin(), z[layers - 1].end())))
                 error += 1;
         }
-        cout << error << ", ";
+        cout << error << "/" << testData.size();
         return error;
     }
 
@@ -100,6 +100,12 @@ class NN
                         z[0][j] = trainingData[batch + i].first[j];
                     //cout << "c+" << i << endl;
                     backProp(trainingData[batch + i].second);
+                    /*for (int j = 0; j < sizes[layers - 1]; ++j)
+                        cout << z[layers - 1][j] << " ";
+                    cout << endl;
+                    for (int j = 0; j < sizes[layers - 1]; ++j)
+                        cout << trainingData[batch + i].second[j] << " ";
+                    cout << endl;*/
                 }
                 //cout << "c1" << endl;
                 for (int i = 0; i < layers - 1; ++i)
@@ -111,13 +117,12 @@ class NN
                         delb[i][j] /= batchSize;
                 gradDescent();
             }
-            int errors = test(trainingData);
+            int errors = test(validationData);
             /*if (errors > prev)
                 break;
             else
                 prev = errors;*/
         }
-
     }
 
     void forwardPass()
@@ -179,7 +184,7 @@ class NN
                 for (int k = 0; k < sizes[i + 1]; ++k)
                     delta[i][j] += weights[i][j][k] * delta[i + 1][k];
                 //cout << "b4" << endl;
-                delta[i][j] = sigmoid(z[i][j]) * (1 - sigmoid(z[i][j])) * delta[i][j];
+                delta[i][j] = z[i][j] * (1 - z[i][j]) * delta[i][j];
             }
             //cout << "b5" << endl;
         }
@@ -220,7 +225,7 @@ int main()
     cout << trainingData.size() << endl;
     cout << "input done" << endl;
     vector <int> sizes;
-    sizes.push_back(64); sizes.push_back(10); sizes.push_back(10);
+    sizes.push_back(64); sizes.push_back(5); sizes.push_back(10);
     NN network(sizes);
     cout << "nn made" << endl;
     network.train(trainingData, validationData, 100, 3000);
