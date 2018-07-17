@@ -105,7 +105,7 @@ Matrix findMean(vector <pair <Matrix, int> > &trainingData, int classification)
     return m;
 }
 
-Matrix intraCov(vector <pair <Matrix, int> > &trainingData, Matrix mean[])
+Matrix variance(vector <pair <Matrix, int> > &trainingData, Matrix mean[])
 {
     vector <Matrix> Sw;
     Matrix S(DIMEN, DIMEN);
@@ -139,11 +139,11 @@ int main()
     mean[1] = findMean(trainingData, 1);
     //Step 2: Find the covariance with each cluster
     cout << "Calculating covariance matrix..." << endl;
-    Matrix Sw(DIMEN, DIMEN);
-    Sw = intraCov(trainingData, mean);
+    Matrix S(DIMEN, DIMEN);
+    S = variance(trainingData, mean);
     //Step 3: Find w, the weight vector
     cout << "Calculating weight vector..." << endl;
-    Matrix w = Sw.inverse().multiply(mean[1].add(mean[0], true));
+    Matrix w = S.inverse().multiply(mean[1].add(mean[0], true));
     //Step 4: project all the points to single dimension
     cout << "Projecting all points in 1D..." << endl;
     vector <pair<double, int> > wTx;
@@ -151,8 +151,8 @@ int main()
         wTx.push_back(pair <double, int> (w.transpose().multiply(trainingData[i].first).A[0][0], trainingData[i].second));
     //Step 5: calc y0
     cout << "Calculating y0..." << endl;
-    double y0 = -0.5 * mean[0].transpose().multiply(Sw.inverse()).multiply(mean[0]).A[0][0];
-    y0 += -0.5 * mean[1].transpose().multiply(Sw.inverse()).multiply(mean[1]).A[0][0];
+    double y0 = -0.5 * mean[0].transpose().multiply(S.inverse()).multiply(mean[0]).A[0][0];
+    y0 += -0.5 * mean[1].transpose().multiply(S.inverse()).multiply(mean[1]).A[0][0];
     y0 += log(countPoints(wTx, false, 0, false, 0) / countPoints(wTx, false, 0, false, 1));
     //Testing training data
     cout << "Training Data: " << endl;

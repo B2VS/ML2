@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 #define GAMMA 0.9
-#define ETA 0.01
+#define ETA 0.002
 
 using namespace std;
 typedef vector <pair <vector <double>, vector <double> > > Data;
@@ -59,7 +59,7 @@ class NN
                 distance(z[layers - 1].begin(), max_element(z[layers - 1].begin(), z[layers - 1].end())))
                 error += 1;
         }
-        cout << error << "/" << testData.size();
+        cout << 1 - error / (double)testData.size();
         return error;
     }
 
@@ -225,7 +225,7 @@ int main()
     cout << trainingData.size() << endl;
     cout << "input done" << endl;
     vector <int> sizes;
-    sizes.push_back(64); sizes.push_back(5); sizes.push_back(10);
+    sizes.push_back(64); sizes.push_back(10); sizes.push_back(10);
     NN network(sizes);
     cout << "nn made" << endl;
     network.train(trainingData, validationData, 100, 3000);

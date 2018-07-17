@@ -1,0 +1,23 @@
+Selected Topics in Computer Science
+Assignment 3
+
+Vedic Sharma
+2014B4A70424H
+
+NN
+The results are as follows:
+Number of layers, Accuracy (percentage), Iterations
+3	0.9755	4000 (100)
+4	0.9783	4000 (100 - 100)
+5	0.9775	4000 (80 - 80 - 80)
+
+
+CNN
+The results are as follows:
+Number of layers, Accuracy (percentage), Epochs
+3	0.9867	4000 (32)
+4	0.9896	4000 (32 - 64)
+5	0.9901	4000 (32 - 32 - 32)
+
+
+
